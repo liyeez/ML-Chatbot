@@ -43,6 +43,7 @@ def configDB():
     conn.commit()
     conn.close()
 
+# get request with filter to find a certain appointment or any that matches the filter
 class AppointmentsDayOfWeek(Resource):
 
     def get(self, day_of_week):
@@ -59,6 +60,7 @@ class AppointmentsDayOfWeek(Resource):
         configDB()
 
         conn = sqlite3.connect('timeslots.db')
+        # filter by day of week, dentist name and time of the day
         cursor = conn.execute("SELECT * FROM timeslots WHERE day_of_week=? and dentist_name like ? and time_of_day like ?", (day_of_week, '%'+dentist_name+'%', time_of_day))
         appt_records = cursor.fetchall()
 

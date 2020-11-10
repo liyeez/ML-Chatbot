@@ -6,7 +6,7 @@ info:
 
 # Added by API Auto Mocking Plugin
 host: virtserver.swaggerhub.com
-# basePath: z5133974/ChatBotAss2/0/
+# basePath: /dentist_api
 schemes:
  - https
  
@@ -71,4 +71,4 @@ definitions:
       message: 
         type: "string"
 # Added by API Auto Mocking Plugin
-basePath: /z5133975/ChatBotAss2/0
+basePath: /dentist_api
