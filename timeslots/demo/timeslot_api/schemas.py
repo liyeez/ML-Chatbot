@@ -48,20 +48,20 @@ class RefNode(object):
 ### code generating.
 ###
 
-base_path = '/z5133975/TimeSlot_API/0'
+base_path = '/timeslot_api'
 
-definitions = {'definitions': {'Appointment': {'type': 'object', 'required': ['time_of_day', 'day_of_week', 'dentist_name', 'patient_name', 'status'], 'properties': {'time_of_day': {'type': 'string'}, 'day_of_week': {'type': 'string'}, 'dentist_name': {'type': 'string'}, 'patient_name': {'type': 'string'}, 'status': {'type': 'boolean'}}}, 'Appointments': {'type': 'array', 'items': {'$ref': '#/definitions/Appointment'}}}, 'parameters': {}}
+definitions = {'definitions': {'Appointment': {'type': 'object', 'properties': {'time_of_day': {'type': 'string'}, 'day_of_week': {'type': 'string'}, 'dentist_name': {'type': 'string'}, 'patient_name': {'type': 'string'}, 'status': {'type': 'boolean'}}}, 'Appointments': {'type': 'array', 'items': {'$ref': '#/definitions/Appointment'}}, 'link': {'type': 'object', 'properties': {'description': {'type': 'string'}, 'href': {'type': 'string'}, 'rel': {'type': 'string'}, 'request': {'type': 'string'}}, 'example': [{'href': 'https://localhost:8000/appointments', 'rel': 'next', 'request': 'POST', 'description': 'book an appointment'}]}, 'links': {'type': 'array', 'items': {'$ref': '#/definitions/link'}, 'example': [{'href': 'https://localhost:8000/appointments', 'rel': 'next', 'request': 'POST', 'description': 'book an appointment'}, {'href': 'https://localhost:8000/appointments/cancel', 'rel': 'next', 'request': 'POST', 'description': 'cancel an appointment'}]}}, 'parameters': {}}
 
 validators = {
-    ('appointments_day_of_week', 'GET'): {'args': {'required': [], 'properties': {'time_of_day': {'type': 'string', 'description': 'The time requested'}, 'dentist_name': {'type': 'string', 'description': 'The dentist requested'}}}},
+    ('appointments', 'GET'): {'args': {'required': [], 'properties': {'day_of_week': {'type': 'string', 'description': 'The day of the week to get appointments from'}, 'time_of_day': {'type': 'string', 'description': 'The time requested'}, 'dentist_name': {'type': 'string', 'description': 'The dentist requested'}}}},
     ('appointments', 'POST'): {'json': {'$ref': '#/definitions/Appointment'}},
-    ('appointments', 'DELETE'): {'json': {'type': 'string'}},
+    ('appointments_cancel', 'POST'): {'json': {'$ref': '#/definitions/Appointment'}},
 }
 
 filters = {
-    ('appointments_day_of_week', 'GET'): {200: {'headers': None, 'schema': {'$ref': '#/definitions/Appointments'}}, 400: {'headers': None, 'schema': {'type': 'string', 'example': 'Unable to parse query string'}}, 403: {'headers': None, 'schema': {'type': 'string', 'example': 'Not Found'}}},
-    ('appointments', 'POST'): {200: {'headers': None, 'schema': {'$ref': '#/definitions/Appointment'}}, 400: {'headers': None, 'schema': {'type': 'string', 'example': 'Unable to create appointment'}}, 404: {'headers': None, 'schema': None}},
-    ('appointments', 'DELETE'): {202: {'headers': None, 'schema': None}, 400: {'headers': None, 'schema': {'type': 'string', 'example': 'Unable to delete appointment'}}, 404: {'headers': None, 'schema': None}},
+    ('appointments', 'GET'): {200: {'headers': None, 'schema': {'type': 'object', 'required': ['appointments', 'links'], 'properties': {'appointments': {'$ref': '#/definitions/Appointments'}, 'links': {'$ref': '#/definitions/links'}}}}, 400: {'headers': None, 'schema': {'type': 'string', 'example': 'Unable to parse query string'}}, 403: {'headers': None, 'schema': {'type': 'string', 'example': 'Not Found'}}},
+    ('appointments', 'POST'): {201: {'headers': None, 'schema': {'type': 'object', 'required': ['appointment', 'links'], 'properties': {'appointment': {'$ref': '#/definitions/Appointment'}, 'links': {'$ref': '#/definitions/links'}}}}, 400: {'headers': None, 'schema': {'type': 'string', 'example': 'Unable to create appointment'}}, 404: {'headers': None, 'schema': None}},
+    ('appointments_cancel', 'POST'): {202: {'headers': None, 'schema': {'type': 'object', 'required': ['links'], 'properties': {'links': {'$ref': '#/definitions/links'}}}}, 400: {'headers': None, 'schema': {'type': 'string', 'example': 'Unable to delete appointment'}}, 404: {'headers': None, 'schema': None}},
 }
 
 scopes = {

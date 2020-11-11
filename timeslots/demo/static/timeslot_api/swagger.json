@@ -12,17 +12,16 @@
     "application/json"
   ],
   "paths": {
-    "/appointments/{day_of_week}": {
+    "/appointments": {
       "get": {
         "operationId": "getAppointments",
-        "summary": "Get appointment of a certain week day",
+        "summary": "Get appointments with filters",
         "parameters": [
           {
+            "in": "query",
             "name": "day_of_week",
-            "in": "path",
-            "description": "The day of the week to get appointments from",
-            "required": true,
-            "type": "string"
+            "type": "string",
+            "description": "The day of the week to get appointments from"
           },
           {
             "in": "query",
@@ -41,7 +40,19 @@
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/Appointments"
+              "type": "object",
+              "required": [
+                "appointments",
+                "links"
+              ],
+              "properties": {
+                "appointments": {
+                  "$ref": "#/definitions/Appointments"
+                },
+                "links": {
+                  "$ref": "#/definitions/links"
+                }
+              }
             }
           },
           "400": {
@@ -59,9 +70,7 @@
             }
           }
         }
-      }
-    },
-    "/appointments": {
+      },
       "post": {
         "operationId": "makeAppointment",
         "summary": "Make a new appointment",
@@ -69,17 +78,28 @@
           {
             "name": "appt_info",
             "in": "body",
-            "required": true,
             "schema": {
               "$ref": "#/definitions/Appointment"
             }
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "description": "Appointment made successfully!",
             "schema": {
-              "$ref": "#/definitions/Appointment"
+              "type": "object",
+              "required": [
+                "appointment",
+                "links"
+              ],
+              "properties": {
+                "appointment": {
+                  "$ref": "#/definitions/Appointment"
+                },
+                "links": {
+                  "$ref": "#/definitions/links"
+                }
+              }
             }
           },
           "400": {
@@ -93,23 +113,36 @@
             "description": "No such timeslot available"
           }
         }
-      },
-      "delete": {
+      }
+    },
+    "/appointments/cancel": {
+      "post": {
         "operationId": "cancelAppointment",
         "summary": "Cancel Appointment",
         "parameters": [
           {
-            "name": "time_of_day",
+            "name": "appt_info",
             "in": "body",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/definitions/Appointment"
             }
           }
         ],
         "responses": {
           "202": {
-            "description": "Appointment deleted"
+            "description": "Appointment canceled",
+            "schema": {
+              "type": "object",
+              "required": [
+                "links"
+              ],
+              "properties": {
+                "links": {
+                  "$ref": "#/definitions/links"
+                }
+              }
+            }
           },
           "400": {
             "description": "Error",
@@ -128,13 +161,6 @@
   "definitions": {
     "Appointment": {
       "type": "object",
-      "required": [
-        "time_of_day",
-        "day_of_week",
-        "dentist_name",
-        "patient_name",
-        "status"
-      ],
       "properties": {
         "time_of_day": {
           "type": "string"
@@ -158,7 +184,52 @@
       "items": {
         "$ref": "#/definitions/Appointment"
       }
+    },
+    "link": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "href": {
+          "type": "string"
+        },
+        "rel": {
+          "type": "string"
+        },
+        "request": {
+          "type": "string"
+        }
+      },
+      "example": [
+        {
+          "href": "https://localhost:8000/appointments",
+          "rel": "next",
+          "request": "POST",
+          "description": "book an appointment"
+        }
+      ]
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/link"
+      },
+      "example": [
+        {
+          "href": "https://localhost:8000/appointments",
+          "rel": "next",
+          "request": "POST",
+          "description": "book an appointment"
+        },
+        {
+          "href": "https://localhost:8000/appointments/cancel",
+          "rel": "next",
+          "request": "POST",
+          "description": "cancel an appointment"
+        }
+      ]
     }
   },
-  "basePath": "/z5133975/TimeSlot_API/0"
+  "basePath": "/timeslot_api"
 }

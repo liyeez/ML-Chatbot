@@ -8,11 +8,11 @@
 ###
 from __future__ import absolute_import
 
-from .api.appointments_day_of_week import AppointmentsDayOfWeek
 from .api.appointments import Appointments
+from .api.appointments_cancel import AppointmentsCancel
 
 
 routes = [
-    dict(resource=AppointmentsDayOfWeek, urls=['/appointments/<day_of_week>'], endpoint='appointments_day_of_week'),
     dict(resource=Appointments, urls=['/appointments'], endpoint='appointments'),
+    dict(resource=AppointmentsCancel, urls=['/appointments/cancel'], endpoint='appointments_cancel'),
 ]

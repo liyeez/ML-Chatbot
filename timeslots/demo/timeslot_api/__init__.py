@@ -12,7 +12,7 @@ from .validators import security
 def current_scopes():
     return []
 
-bp = Blueprint('z5133975_TimeSlot_API_0', __name__, static_folder='static')
+bp = Blueprint('timeslot_api', __name__, static_folder='static')
 api = restful.Api(bp, catch_all_404s=True)
 
 for route in routes:
