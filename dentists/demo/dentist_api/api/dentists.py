@@ -33,7 +33,7 @@ class Dentists(Resource):
 
         dentists = []
         try:
-            conn = sqlite3.connect('dentists.db')
+            conn = sqlite3.connect('dentists.db') # make sure db is in /dentists directory
             print("connected to db")
 
             if(expression == 'any'): # get every dentists on db

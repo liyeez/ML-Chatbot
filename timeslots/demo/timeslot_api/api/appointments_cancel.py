@@ -13,7 +13,13 @@ class AppointmentsCancel(Resource):
     def post(self):
 
         try:
-            reservation = request.json
+            try:
+                reservation = request.json
+                print(request.data)
+            except Exception as e:
+                print(e)
+                return 'Failed to receive body response!', 400
+        
             try:
                 time_of_day = reservation['time_of_day']
             except:
@@ -38,18 +44,28 @@ class AppointmentsCancel(Resource):
                 status = reservation['status']
             except:
                 return "status field not found", 400
-        
-
+            
+            try:
+                date_appt = reservation['date_appt']
+            except:
+                return "date of appointment not found", 400
+            
             conn = sqlite3.connect('timeslots.db')
-            cursor = conn.execute("SELECT * FROM timeslots WHERE day_of_week like ? and dentist_name like ? and time_of_day like ?", (reservation['day_of_week'], '%'+reservation['dentist_name']+'%', reservation['time_of_day']))
+            cursor = conn.execute("SELECT * FROM timeslots WHERE day_of_week like ? and dentist_name like ? and time_of_day like ? and patient_name=? and date_appt like ?", (reservation['day_of_week'], '%'+reservation['dentist_name']+'%', reservation['time_of_day'], reservation['patient_name'], reservation['date_appt']))
             appt_records = cursor.fetchall()
 
-            if not len(appt_records) == 1: # if more than one tuples are returned 
+            if len(appt_records) == 0:
+                conn.close()
+                return 'Oops, there is no such booked appointment under the details given or it has already been cancelled. Please ensure your details are correct. (eg. Did you provide the correct full name?)', 400
+            
+            if len(appt_records) > 1: # if more than one tuples are returned 
                 print(appt_records)
+                print(len(appt_records))              
                 conn.close()
                 return 'Fields not specified enough', 400
             
-            elif appt_records[0][2] != reservation['patient_name']:
+            if appt_records[0][2] != reservation['patient_name']:
+                print(('Patient_name does not match, recorded patient is: ', appt_records[0][2]))
                 return ('Patient_name does not match, recorded patient is: ', appt_records[0][2]), 400
             else:
                 if appt_records[0][6] == True or appt_records[0][2] == None: # already reserved or have no name
@@ -63,7 +79,9 @@ class AppointmentsCancel(Resource):
                     except:
                         conn.close()
                         return "Failed to cancel appointment in db", 400
-            return {'links': user_links()}, 202, None
+            
+            objs = user_links()
+            return {'links': objs, 'msg': 'Successfully cancelled appointment!'}, 202, None
         except:
             return 'Unable to cancel appointment', 400
 

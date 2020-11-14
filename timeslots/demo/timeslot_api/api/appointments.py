@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
-
+import json
 from flask import request, g
 import sqlite3
 import datetime as DT
@@ -74,9 +74,24 @@ class Appointments(Resource):
         configDB()
 
         conn = sqlite3.connect('timeslots.db')
+        
+        # in order to fetch tha latest available appointment starting from tomorrow
+        appt_id = 0
+        try:
+            conn1 = sqlite3.connect('timeslots.db')
+            date_tmw = DT.date.today() + DT.timedelta(days=1)
+            tmw = date_tmw.strftime('%Y-%m-%d')
+            c = conn1.execute("SELECT * FROM timeslots WHERE date_appt=?", (tmw,))
+            a = c.fetchone()
+            appt_id = a[0]
+        except Exception as e:
+            print(e)
+            conn1.close()
+            print('today failed')
+
         # filter by day of week, dentist name and time of the day
-        # need to ensure filter format is correct, assumed correct format is passed from chatbot api
-        cursor = conn.execute("SELECT * FROM timeslots WHERE day_of_week like ? and dentist_name like ? and time_of_day like ?", (day_of_week, '%'+dentist_name+'%', time_of_day))
+        # need to ensure filter format is correct, assumed correct format is passed from chatbot api, only returning unreserved appointments
+        cursor = conn.execute("SELECT * FROM timeslots WHERE day_of_week like ? and dentist_name like ? and time_of_day like ? and id > ? and status=1 limit 5", (day_of_week, '%'+dentist_name+'%', time_of_day, appt_id))
         appt_records = cursor.fetchall()
 
         appts = []
@@ -89,36 +104,97 @@ class Appointments(Resource):
             # False = reserved, True = available
             appt['status'] = appt_records[i][6]
             appt['time_of_day'] = appt_records[i][4]
+            appt['date_appt'] = appt_records[0][5]
 
             appts.append(appt)
-            print(appt_records[i]) 
+             
        
 
         conn.close()
     
         links = user_links('get_request')
         
+        print(appts)
         return {'appointments': appts, 'links': links}, 200, None
 
     def post(self):
         appt = {}
         try:
             reservation = request.json
+            print(request.data)
+        except Exception as e:
+            print(e)
+            return 'Failed to receive body response!', 400
+        
+        try:
+            day_of_week = reservation['day_of_week']
+        except:
+            return 'day_of_week field missing!', 400
+        
+        try:
+            dentist_name = reservation['dentist_name']
+        except:
+            return 'dentist_name field missing!', 400
+
+        try:
+            time_of_day = reservation['time_of_day']
+        except:
+            return 'time_of_day field missing!', 400
+
+        try:
+            patient_name = reservation['patient_name']
+        except:
+            return 'patient_name field missing!', 400
+
+        try:
+            date_appt = reservation['date_appt']
+        except:
+            return 'date_appt field missing!', 400
+
+        
+        try:
+            
             conn = sqlite3.connect('timeslots.db')
-            cursor = conn.execute("SELECT * FROM timeslots WHERE day_of_week like ? and dentist_name like ? and time_of_day like ?", (reservation['day_of_week'], '%'+reservation['dentist_name']+'%', reservation['time_of_day']))
+            cursor = conn.execute("SELECT * FROM timeslots WHERE day_of_week like ? and dentist_name like ? and time_of_day like ? and date_appt=?", (day_of_week, '%'+dentist_name+'%', time_of_day, date_appt))
             appt_records = cursor.fetchall()
 
-            if not len(appt_records) == 1:
+    
+            # if not len(appt_records) == 1:
+            #     print(appt_records)
+            #     return 'Fields not specified enough', 400
+            if len(appt_records) == 0:
+                conn.close()
+                return 'Oops, there is no such booking time available! Please ensure the booking time starts on the hour as appointments run hourly!', 400
+            
+            if len(appt_records) > 1: # if more than one tuples are returned 
                 print(appt_records)
+                print(len(appt_records))              
+                conn.close()
                 return 'Fields not specified enough', 400
+            
+                    
             else:
-                
+                # TODO: need to provide recommendation
+                print(appt_records[0])
                 if appt_records[0][6] == False: # already reserved
-                    return "Appointment time already reserved.", 400
+                    rec = {}
+                    try:
+                        print(appt_records[0])
+                        # get next timeslot in line that is available
+                        c = conn.execute("SELECT * FROM timeslots WHERE id > ? and status=1", (appt_records[0][0],))
+                        a = c.fetchone()   
+                        print(a)
+                        rec['day_of_week'] = a[3]
+                        rec['dentist_name'] = a[1]
+                        rec['time_of_day'] = a[4]
+                        rec['date_appt'] = a[5]
+                        return {'err':'reserved', 'recommendation': rec}, 400
+                    except:
+                        return {'err':'reserved', 'recommendation': rec}, 400
                 else:
                     tuple_id = appt_records[0][0]
                     # update database to store the status of reservation as false as well as the patient_name
-                    conn.execute("UPDATE timeslots SET status=0, patient_name=? WHERE id=?", (reservation['patient_name'], appt_records[0][0]))
+                    conn.execute("UPDATE timeslots SET status=0, patient_name=? WHERE id=?", (patient_name, appt_records[0][0]))
                     # get the appointment again from db
                     conn.commit()
                     
@@ -128,18 +204,18 @@ class Appointments(Resource):
                     
                     appt['day_of_week'] = appt_records[0][3]
                     appt['dentist_name'] = appt_records[0][1]
-                    #appt['patient_name'] = appt_records[0][2]
                     appt['patient_name'] = reservation['patient_name']
-                    # # appt['status'] = appt_records[0][6]
                     appt['status'] = False
                     appt['time_of_day'] = appt_records[0][4]
-
+                    appt['date_appt'] = appt_records[0][5]
                 
                     links = user_links('post_request')
-               
+                    print('booked successfully! id was')
+                    print(appt_records[0][0])
                     return {'appointment': appt, 'links': links }, 201, None
             
-        except:
+        except Exception as e:
+            print(e)
             return 'Fields not satisfied: Is booking time within 7 days?', 400
 
 def user_links(type_of_links):

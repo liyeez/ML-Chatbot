@@ -176,6 +176,9 @@
         },
         "status": {
           "type": "boolean"
+        },
+        "date_appt": {
+          "type": "string"
         }
       }
     },
