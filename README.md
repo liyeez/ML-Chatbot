@@ -1,4 +1,5 @@
 Build Instructions:
+
 To start frontend:
 1. Ensure current directory is inside the folder [‘dockerized_ass2’]
 2. Run command: ​ $ ​ python3 -m http.server
